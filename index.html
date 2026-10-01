@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#F7C9D6">
+<title>For You</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500;1,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FFF6EC;
+    --paper:#FFFBF5;
+    --blush:#F7C9D6;
+    --blush-soft:#FCE3EA;
+    --rose:#D8768C;
+    --rose-deep:#B85C73;
+    --plum:#4A2E3B;
+    --plum-soft:#7A5A66;
+    --gold:#E8B84B;
+    --dirt:#C79A70;
+    --dirt-dark:#8C6647;
+    --grass:#D7E6CE;
+    --grass-deep:#BFD6B2;
+    --bad:#C65B5B;
+    --pink-bg:#FFD6E8;
+    --pink-card:#FFEAF3;
+    --hot-pink:#FF6FA0;
+    --hot-pink-deep:#E8558C;
+    --ink:#2A2130;
+    --butter:#FFDD87;
+    --butter-deep:#E8B84B;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;overscroll-behavior-y:contain;}
+  body{
+    background:var(--cream);
+    color:var(--plum);
+    font-family:'Baloo 2',sans-serif;
+    overflow-x:hidden;
+    width:100%;
+    min-height:100dvh;
+  }
+  button{font-family:inherit;touch-action:manipulation;}
+  svg{display:block;}
+  #app{position:relative;width:100%;min-height:100dvh;}
+  .screen{
+    position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
+    min-height:100dvh;padding:calc(env(safe-area-inset-top,0px) + 22px) 18px calc(env(safe-area-inset-bottom,0px) + 22px);
+    text-align:center;
+  }
+  .screen.active{display:flex;}
+  .fade-in{animation:fadeIn .6s ease both;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+  /* ---------- shared ---------- */
+  .icon-row{display:flex;align-items:center;justify-content:center;gap:10px;}
+  .btn{
+    border:none;cursor:pointer;border-radius:999px;padding:15px 36px;min-height:50px;
+    font-family:'Baloo 2',sans-serif;font-weight:700;font-size:18px;
+    background:var(--rose);color:#fff;box-shadow:0 8px 0 var(--rose-deep);
+    transition:transform .12s ease, box-shadow .12s ease;
+    letter-spacing:.2px;user-select:none;-webkit-touch-callout:none;
+    display:inline-flex;align-items:center;gap:9px;
+  }
+  .btn:active{transform:translateY(6px);box-shadow:0 2px 0 var(--rose-deep);}
+  .btn.ghost{background:transparent;color:var(--rose-deep);box-shadow:none;border:2.5px solid var(--rose);padding:13px 32px;}
+  .btn.ghost:active{transform:translateY(3px);}
+  .btn.pill-outline{
+    background:var(--pink-card);color:var(--ink);box-shadow:0 4px 0 var(--ink);
+    border:2px solid var(--ink);padding:12px 26px;font-size:16px;
+  }
+  .btn.pill-outline:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink);}
+  .btn.pill-outline svg{color:var(--hot-pink);}
+  .icon-btn{
+    width:42px;height:42px;border-radius:50%;border:none;background:transparent;color:var(--plum-soft);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+  }
+  .icon-btn:active{transform:scale(.9);}
+  .icon-btn svg{width:20px;height:20px;}
+
+  /* ---------- decorative svg helpers ---------- */
+  .hero-bunny{width:96px;height:96px;color:var(--rose);animation:bounce 2.2s ease-in-out infinite;}
+  @keyframes bounce{0%,100%{transform:translateY(0) rotate(-3deg);}50%{transform:translateY(-12px) rotate(3deg);}}
+
+  /* ---------- start screen ---------- */
+  #screen-start h1{
+    font-size:clamp(26px,6.4vw,42px);margin:10px 0 6px;color:var(--plum);
+  }
+  #screen-start p{font-size:16.5px;color:var(--plum-soft);max-width:400px;margin:0 auto 26px;line-height:1.55;}
+  .rules{
+    margin:22px auto 0;max-width:380px;width:100%;background:var(--paper);border-radius:18px;padding:16px 20px;
+    box-shadow:0 6px 18px rgba(74,46,59,0.08);font-size:14.5px;color:var(--plum-soft);text-align:left;line-height:1.7;
+  }
+  .rules-row{display:flex;align-items:flex-start;gap:10px;margin:4px 0;}
+  .rules-row svg{flex:none;width:19px;height:19px;color:var(--rose-deep);margin-top:2px;}
+  .rules-row .sk{font-size:16px;line-height:1;}
+  .rules b{color:var(--rose-deep);}
+
+  /* ---------- game screen ---------- */
+  #screen-game{padding-top:calc(env(safe-area-inset-top,0px) + 14px);justify-content:flex-start;}
+  .hud{
+    width:100%;max-width:640px;display:flex;align-items:center;justify-content:space-between;
+    padding:6px 8px 14px;
+  }
+  .hud-block{display:flex;flex-direction:column;align-items:flex-start;font-weight:700;}
+  .hud-block.right{align-items:flex-end;}
+  .hud-label{font-size:11px;letter-spacing:.4px;color:var(--plum-soft);font-weight:600;}
+  .hud-value{font-size:23px;color:var(--rose-deep);}
+  .lives{display:flex;gap:5px;}
+  .lives svg{width:19px;height:19px;color:var(--rose);}
+  .lives svg.lost{color:#e7d3d9;}
+  .timerbar-wrap{
+    width:100%;max-width:640px;height:10px;background:var(--blush);border-radius:999px;overflow:hidden;margin-bottom:16px;
+  }
+  .timerbar{height:100%;width:100%;background:linear-gradient(90deg,var(--butter),var(--hot-pink));border-radius:999px;transition:width .2s linear;}
+
+  .board{
+    position:relative;width:100%;max-width:640px;aspect-ratio:4/3;border-radius:26px;overflow:hidden;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.35), transparent 60%),
+      linear-gradient(180deg, var(--grass) 0%, var(--grass-deep) 100%);
+    box-shadow:0 14px 30px rgba(74,46,59,0.18), inset 0 0 0 6px #fff;
+    cursor:none;
+    touch-action:manipulation;
+    user-select:none;-webkit-touch-callout:none;
+  }
+  .deco{position:absolute;pointer-events:none;color:var(--rose);opacity:.75;}
+  .deco svg{width:20px;height:20px;}
+  .deco.gold{color:var(--butter-deep);}
+  .holes-grid{
+    position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);
+    padding:8% 6% 4%;gap:4%;
+  }
+  .hole{position:relative;display:flex;align-items:flex-end;justify-content:center;}
+  .mound{
+    position:absolute;bottom:6%;left:50%;transform:translateX(-50%);
+    width:92%;height:46%;border-radius:50%;
+    background:radial-gradient(ellipse at 50% 40%, var(--dirt) 0%, var(--dirt-dark) 100%);
+    box-shadow:inset 0 6px 10px rgba(0,0,0,0.25);
+  }
+  .slot{
+    position:absolute;bottom:10%;left:50%;transform:translateX(-50%);
+    width:64%;height:22%;border-radius:50%;background:#3d2a1d;box-shadow:inset 0 4px 8px rgba(0,0,0,0.5);
+  }
+  .target-wrap{
+    position:absolute;bottom:14%;left:50%;width:58%;aspect-ratio:1/1;
+    transform:translate(-50%,70%) scale(.7);opacity:0;
+    transition:transform .16s cubic-bezier(.34,1.56,.64,1), opacity .16s ease;
+    z-index:2;
+  }
+  .target-wrap.show{transform:translate(-50%,-6%) scale(1);opacity:1;}
+  .target-wrap.hit{transform:translate(-50%,-6%) scale(1.18) rotate(-8deg) !important;opacity:0 !important;transition:transform .22s ease,opacity .22s ease;}
+  .target-wrap.bad-hit{transform:translate(-50%,-6%) scale(1.1) !important;opacity:0 !important;transition:transform .22s ease,opacity .22s ease;animation:shake .22s ease;}
+  @keyframes shake{0%,100%{margin-left:0;}25%{margin-left:-6px;}75%{margin-left:6px;}}
+  .target-wrap img{width:100%;height:100%;object-fit:cover;border-radius:50%;box-shadow:0 6px 14px rgba(0,0,0,0.25);display:block;}
+  .target-wrap.skull{display:flex;align-items:center;justify-content:center;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #6b5a68, #3c2c38);box-shadow:0 6px 14px rgba(0,0,0,0.3);}
+  .target-wrap.skull span{font-size:min(9vw,44px);line-height:1;}
+  .popscore{
+    position:absolute;left:50%;top:-6%;transform:translateX(-50%);color:var(--rose-deep);font-weight:800;font-size:19px;
+    opacity:0;pointer-events:none;z-index:5;
+  }
+  .popscore.bad{color:var(--bad);}
+  .popscore.go{animation:popup .7s ease forwards;}
+  @keyframes popup{0%{opacity:0;transform:translate(-50%,10px);}20%{opacity:1;}100%{opacity:0;transform:translate(-50%,-38px);}}
+
+  .screen-flash{position:fixed;inset:0;background:rgba(198,91,91,.28);opacity:0;pointer-events:none;z-index:30;}
+  .screen-flash.go{animation:flash .28s ease;}
+  @keyframes flash{0%{opacity:.9;}100%{opacity:0;}}
+
+  .hammer{
+    position:absolute;left:0;top:0;width:54px;height:54px;pointer-events:none;z-index:20;color:var(--plum);
+    transform:translate(-9999px,-9999px) rotate(-18deg);transform-origin:78% 78%;
+    filter:drop-shadow(0 4px 6px rgba(0,0,0,0.25));
+  }
+  .hammer.swing{animation:swing .16s ease;}
+  @keyframes swing{0%{transform:translate(var(--hx),var(--hy)) rotate(-18deg);}45%{transform:translate(var(--hx),var(--hy)) rotate(24deg) scale(1.05);}100%{transform:translate(var(--hx),var(--hy)) rotate(-18deg);}}
+
+  /* ---------- result screen ---------- */
+  #screen-result .paw{width:34px;height:34px;color:var(--rose);margin:0 auto 6px;}
+  #screen-result .score-label{font-size:15px;color:var(--plum-soft);letter-spacing:.5px;}
+  #screen-result .score-big{font-size:54px;color:var(--rose-deep);font-weight:800;margin:4px 0;}
+  #screen-result .msg{max-width:380px;margin:14px auto 26px;font-size:16px;color:var(--plum-soft);line-height:1.6;}
+
+  /* ---------- reveal: envelope ---------- */
+  #screen-reveal-envelope{
+    background:
+      radial-gradient(circle at 20% 20%, rgba(216,118,140,.10), transparent 45%),
+      radial-gradient(circle at 85% 80%, rgba(232,184,75,.12), transparent 45%),
+      var(--cream);
+  }
+  .envelope-wrap{cursor:pointer;position:relative;width:min(78vw,260px);}
+  .envelope{
+    position:relative;width:100%;aspect-ratio:3/2;background:var(--rose);border-radius:10px;
+    box-shadow:0 16px 30px rgba(74,46,59,0.25);overflow:hidden;
+  }
+  .envelope::before{
+    content:"";position:absolute;inset:0;
+    background:linear-gradient(135deg, transparent 49.4%, rgba(255,255,255,.18) 50%, transparent 50.6%);
+  }
+  .flap{
+    position:absolute;top:0;left:0;width:100%;height:58%;background:var(--rose-deep);
+    clip-path:polygon(0 0,100% 0,50% 100%);transform-origin:top;transition:transform .5s cubic-bezier(.6,-0.2,.3,1.3);
+    z-index:3;
+  }
+  .envelope.open .flap{transform:rotateX(180deg);}
+  .heart-seal{
+    position:absolute;top:44%;left:50%;transform:translate(-50%,-50%);z-index:4;
+    transition:opacity .3s ease;width:34px;height:34px;color:#fff;
+  }
+  .envelope.open .heart-seal{opacity:0;}
+  .tap-hint{margin-top:18px;font-size:14px;color:var(--plum-soft);}
+
+  /* ---------- reveal: letter (carrd-inspired) ---------- */
+  #screen-letter{position:relative;background:var(--pink-bg);}
+  .letter-float{position:absolute;color:var(--hot-pink);opacity:.55;pointer-events:none;}
+  .letter-float svg{display:block;}
+  .letter-wrap{width:100%;max-width:400px;position:relative;z-index:2;}
+  .topbar{
+    background:var(--pink-card);border-radius:22px;padding:10px 18px;display:flex;align-items:center;justify-content:center;
+    gap:22px;box-shadow:0 6px 16px rgba(74,46,59,0.10);margin-bottom:14px;
+  }
+  .letter-card{
+    background:var(--paper);border-radius:24px;padding:26px 22px 24px 40px;
+    box-shadow:0 16px 34px rgba(74,46,59,0.14);position:relative;text-align:left;
+  }
+  .letter-title{font-size:23px;font-weight:800;color:var(--hot-pink);text-align:center;margin:0 0 16px;}
+  .scroll-rail{position:absolute;left:16px;top:70px;bottom:26px;width:2px;background:var(--blush);border-radius:2px;}
+  .scroll-thumb{
+    position:absolute;left:17px;top:0;transform:translateX(-50%);width:27px;height:27px;
+    cursor:grab;touch-action:none;filter:drop-shadow(0 3px 5px rgba(184,92,115,0.45));
+  }
+  .scroll-thumb:active{cursor:grabbing;}
+  .letter-scroll{
+    max-height:230px;overflow-y:auto;scrollbar-width:none;-ms-overflow-style:none;padding-right:2px;
+  }
+  .letter-scroll::-webkit-scrollbar{display:none;}
+  .letter-body{
+    font-family:'Cormorant Garamond',serif;font-size:19px;line-height:1.8;color:var(--plum);
+    white-space:pre-wrap;
+  }
+  .letter-body .cursor{display:inline-block;width:2px;background:var(--hot-pink-deep);animation:blink 1s step-start infinite;}
+  @keyframes blink{50%{opacity:0;}}
+  .heart-divider{display:flex;align-items:center;justify-content:center;gap:6px;margin:20px 0 18px;color:var(--hot-pink);opacity:.8;}
+  .heart-divider svg{width:11px;height:11px;}
+  .letter-actions{display:flex;gap:12px;justify-content:center;}
+
+  /* ---------- reveal: playlist ---------- */
+  .player-card{
+    background:var(--paper);border-radius:26px;padding:34px 26px;max-width:340px;width:100%;
+    box-shadow:0 16px 34px rgba(74,46,59,0.14);
+  }
+  .vinyl{
+    width:150px;height:150px;border-radius:50%;margin:0 auto 22px;position:relative;
+    background:radial-gradient(circle at 50% 50%, var(--plum) 0%, var(--plum) 18%, var(--rose-deep) 19%, var(--rose-deep) 55%, var(--plum) 56%, var(--plum) 100%);
+    box-shadow:0 10px 22px rgba(74,46,59,0.25);
+  }
+  .vinyl::after{content:"";position:absolute;inset:0;margin:auto;width:20px;height:20px;border-radius:50%;background:var(--paper);}
+  .vinyl.spin{animation:spin 5s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .track-title{font-weight:700;font-size:18px;color:var(--plum);margin-bottom:2px;}
+  .track-sub{font-size:13px;color:var(--plum-soft);margin-bottom:22px;}
+  .player-controls{display:flex;align-items:center;justify-content:center;gap:22px;}
+  .play-btn{
+    width:64px;height:64px;border-radius:50%;background:var(--rose);color:#fff;border:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;box-shadow:0 8px 0 var(--rose-deep);
+  }
+  .play-btn:active{transform:translateY(6px);box-shadow:0 2px 0 var(--rose-deep);}
+  .play-btn svg{width:26px;height:26px;}
+  .back-row{margin-top:22px;}
+
+  /* ---------- reveal: gallery ---------- */
+  .gallery-title{font-size:clamp(22px,5vw,29px);margin:6px 0 4px;position:relative;z-index:2;}
+  .gallery-sub{font-size:15px;color:var(--plum-soft);margin-bottom:22px;position:relative;z-index:2;}
+  #screen-gallery{position:relative;overflow:hidden;}
+  .photo-bg{
+    position:absolute;inset:-15% -25%;z-index:0;overflow:hidden;
+    transform:rotate(-7deg);display:flex;flex-direction:column;gap:16px;pointer-events:none;
+  }
+  .photo-bg-row{
+    white-space:nowrap;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:600;
+    font-size:26px;color:var(--rose);opacity:.14;letter-spacing:1px;
+  }
+  .photo-card{
+    position:relative;z-index:2;background:var(--paper);border-radius:18px;
+    padding:24px 20px 20px;max-width:300px;width:100%;
+    box-shadow:0 16px 34px rgba(74,46,59,0.20);cursor:pointer;
+    user-select:none;-webkit-touch-callout:none;
+  }
+  .photo-pin{
+    position:absolute;top:-20px;left:50%;transform:translateX(-50%);width:42px;height:42px;
+    filter:drop-shadow(0 4px 7px rgba(74,46,59,0.35));z-index:3;
+  }
+  .photo-frame{
+    border-radius:6px;overflow:hidden;background:#eee;
+  }
+  .photo-frame img{
+    width:100%;aspect-ratio:4/5;object-fit:cover;display:block;
+    transition:opacity .2s ease, transform .2s ease;
+  }
+  .photo-caption{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:14px;color:var(--plum-soft);text-align:center;margin-top:12px;}
+  .photo-dots{display:flex;justify-content:center;gap:6px;margin-top:12px;}
+  .photo-dot{width:7px;height:7px;border-radius:50%;background:var(--blush);transition:background .2s ease, transform .2s ease;}
+  .photo-dot.active{background:var(--rose);transform:scale(1.2);}
+  .photo-hint{font-size:12px;color:var(--plum-soft);opacity:.65;margin-top:10px;text-align:center;position:relative;z-index:2;}
+  .gallery-actions{display:flex;gap:12px;margin-top:22px;position:relative;z-index:2;}
+
+  /* ---------- reveal: closing ---------- */
+  .closing-icon{width:52px;height:52px;color:var(--rose);margin-bottom:8px;}
+  .closing-title{font-size:clamp(24px,6vw,33px);margin:0 0 10px;}
+  .closing-text{font-family:'Cormorant Garamond',serif;font-size:20px;line-height:1.7;max-width:420px;color:var(--plum-soft);margin-bottom:26px;}
+
+  .floating-hearts{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden;}
+  .fh{position:absolute;bottom:-40px;color:var(--rose);animation:floatUp linear forwards;}
+  .fh svg{width:100%;height:100%;display:block;}
+  @keyframes floatUp{to{transform:translateY(-110vh) translateX(var(--drift,0px)) rotate(360deg);opacity:0;}}
+
+  @media (max-width:420px){
+    .btn{padding:14px 30px;font-size:17px;}
+    .gallery{gap:11px;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- START -->
+  <section id="screen-start" class="screen active">
+    <svg class="hero-bunny" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M35 45 C28 30, 25 10, 33 4 C38 0, 42 8, 40 22 C39 30, 38 38, 38 45 Z" fill="currentColor"/>
+      <path d="M65 45 C72 30, 75 10, 67 4 C62 0, 58 8, 60 22 C61 30, 62 38, 62 45 Z" fill="currentColor"/>
+      <circle cx="50" cy="58" r="30" fill="currentColor"/>
+      <circle cx="40" cy="54" r="4" fill="#4A2E3B"/>
+      <circle cx="60" cy="54" r="4" fill="#4A2E3B"/>
+      <path d="M46 64 L54 64 L50 70 Z" fill="#B85C73"/>
+      <ellipse cx="30" cy="66" rx="6" ry="4" fill="#FCE3EA"/>
+      <ellipse cx="70" cy="66" rx="6" ry="4" fill="#FCE3EA"/>
+    </svg>
+    <h1>Catch The Sweet Bunny!</h1>
+    <p>Tap whatever pops out of the holes, and try not to run out of lives. Finish the game and something sweet will be waiting for you.</p>
+    <button class="btn" id="btn-start">Start Game</button>
+    <div class="rules">
+      <div class="rules-row">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-6.2-4.1-8.7-7.8C1.6 10.9 1.7 8.6 3 6.9 4.3 5.2 6.7 4.8 8.6 6c1 .6 1.8 1.5 2.4 2.4.4.6 1.1.6 1.5 0 .6-.9 1.4-1.8 2.4-2.4 1.9-1.2 4.3-.8 5.6.9 1.3 1.7 1.4 4 -1.1 6.3C18.2 16.9 12 21 12 21z"/></svg>
+        <span>Tap the bunny that pops up to score points.</span>
+      </div>
+      <div class="rules-row">
+        <span class="sk">💀</span>
+        <span>Do not tap the skull. Hit it and you lose a life.</span>
+      </div>
+      <div class="rules-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>60 seconds on the clock, and it gets faster the longer you play!</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- GAME -->
+  <section id="screen-game" class="screen">
+    <div class="hud">
+      <div class="hud-block">
+        <span class="hud-label">SCORE</span>
+        <span class="hud-value" id="hud-score">0</span>
+      </div>
+      <div class="hud-block" style="align-items:center;">
+        <span class="hud-label">TIME</span>
+        <span class="hud-value" id="hud-time">60</span>
+      </div>
+      <div class="hud-block right">
+        <span class="hud-label">LIVES</span>
+        <span class="lives" id="hud-lives"></span>
+      </div>
+    </div>
+    <div class="timerbar-wrap"><div class="timerbar" id="timerbar"></div></div>
+    <div class="board" id="board">
+      <div class="holes-grid" id="holes-grid"></div>
+      <div class="hammer" id="hammer">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+          <rect x="29" y="20" width="8" height="37" rx="4" fill="#B07C4F" transform="rotate(45 33 38)"/>
+          <rect x="31.1" y="22" width="2.1" height="31" rx="1" fill="#8A5A36" opacity="0.55" transform="rotate(45 33 38)"/>
+          <rect x="20" y="12" width="10" height="8" rx="1.5" fill="#2E2C33" transform="rotate(45 25 16)"/>
+          <rect x="8" y="6" width="34" height="20" rx="6.5" fill="#5B5964" transform="rotate(45 25 16)"/>
+          <rect x="8" y="6" width="34" height="7.5" rx="3.5" fill="#908E99" transform="rotate(45 25 16)"/>
+          <rect x="8" y="19.5" width="34" height="6.5" rx="3" fill="#38363E" opacity="0.65" transform="rotate(45 25 16)"/>
+          <rect x="8" y="6" width="34" height="20" rx="6.5" fill="none" stroke="#211F26" stroke-width="1.2" opacity="0.5" transform="rotate(45 25 16)"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="screen-result" class="screen">
+    <svg class="paw" viewBox="0 0 24 24" fill="currentColor">
+      <circle cx="6" cy="9" r="2.4"/><circle cx="11.5" cy="6.5" r="2.4"/><circle cx="17" cy="9" r="2.4"/>
+      <path d="M11.5 12c-4 0-6.5 2.6-6.5 5.4 0 2 1.7 3.1 3.6 2.4 1-.4 1.9-.9 2.9-.9s1.9.5 2.9.9c1.9.7 3.6-.4 3.6-2.4 0-2.8-2.5-5.4-6.5-5.4z"/>
+    </svg>
+    <div class="score-label">FINAL SCORE</div>
+    <div class="score-big" id="final-score">0</div>
+    <div class="msg" id="final-msg">You did great!</div>
+    <button class="btn" id="btn-see-surprise">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12 21s-6.2-4.1-8.7-7.8C1.6 10.9 1.7 8.6 3 6.9 4.3 5.2 6.7 4.8 8.6 6c1 .6 1.8 1.5 2.4 2.4.4.6 1.1.6 1.5 0 .6-.9 1.4-1.8 2.4-2.4 1.9-1.2 4.3-.8 5.6.9 1.3 1.7 1.4 4-1.1 6.3C18.2 16.9 12 21 12 21z"/></svg>
+      Open Your Surprise
+    </button>
+  </section>
+
+  <!-- REVEAL: envelope -->
+  <section id="screen-reveal-envelope" class="screen">
+    <div class="envelope-wrap" id="envelope-wrap">
+      <div class="envelope" id="envelope">
+        <div class="flap"></div>
+        <svg class="heart-seal" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-6.2-4.1-8.7-7.8C1.6 10.9 1.7 8.6 3 6.9 4.3 5.2 6.7 4.8 8.6 6c1 .6 1.8 1.5 2.4 2.4.4.6 1.1.6 1.5 0 .6-.9 1.4-1.8 2.4-2.4 1.9-1.2 4.3-.8 5.6.9 1.3 1.7 1.4 4-1.1 6.3C18.2 16.9 12 21 12 21z"/></svg>
+      </div>
+    </div>
+    <div class="tap-hint">tap the envelope</div>
+  </section>
+
+  <!-- REVEAL: letter (carrd-inspired) -->
+  <section id="screen-letter" class="screen">
+    <div class="letter-float" style="top:6%;right:8%;width:20px;height:20px;"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-6.2-4.1-8.7-7.8C1.6 10.9 1.7 8.6 3 6.9 4.3 5.2 6.7 4.8 8.6 6c1 .6 1.8 1.5 2.4 2.4.4.6 1.1.6 1.5 0 .6-.9 1.4-1.8 2.4-2.4 1.9-1.2 4.3-.8 5.6.9 1.3 1.7 1.4 4-1.1 6.3C18.2 16.9 12 21 12 21z"/></svg></div>
+    <div class="letter-float" style="top:38%;left:4%;width:16px;height:16px;color:var(--butter-deep);"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/></svg></div>
+    <div class="letter-float" style="bottom:8%;left:9%;width:14px;height:14px;"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-6.2-4.1-8.7-7.8C1.6 10.9 1.7 8.6 3 6.9 4.3 5.2 6.7 4.8 8.6 6c1 .6 1.8 1.5 2.4 2.4.4.6 1.1.6 1.5 0 .6-.9 1.4-1.8 2.4-2.4 1.9-1.2 4.3-.8 5.6.9 1.3 1.7 1.4 4-1.1 6.3C18.2 16.9 12 21 12 21z"/></svg></div>
+    <div class="letter-wrap fade-in">
+      <div class="topbar">
+        <button class="icon-btn" id="icon-envelope" aria-label="replay">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 6.5l9 6 9-6"/></svg>
+        </button>
+        <button class="icon-btn" id="icon-person" aria-label="you">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-4 3.2-6.5 7-6.5s7 2.5 7 6.5"/></svg>
+        </button>
+        <button class="icon-btn" id="icon-close" aria-label="back">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <div class="letter-card">
+        <div class="letter-title">A Reminder</div>
+        <div class="scroll-rail"></div>
+        <svg class="scroll-thumb" id="scroll-thumb" viewBox="0 0 24 24">
+          <defs>
+            <linearGradient id="thumbGrad" x1="0" y1="0" x2="0.9" y2="1">
+              <stop offset="0%" stop-color="var(--hot-pink)"/>
+              <stop offset="100%" stop-color="var(--hot-pink-deep)"/>
+            </linearGradient>
+          </defs>
+          <path d="M12 21s-6.2-4.1-8.7-7.8C1.6 10.9 1.7 8.6 3 6.9 4.3 5.2 6.7 4.8 8.6 6c1 .6 1.8 1.5 2.4 2.4.4.6 1.1.6 1.5 0 .6-.9 1.4-1.8 2.4-2.4 1.9-1.2 4.3-.8 5.6.9 1.3 1.7 1.4 4-1.1 6.3C18.2 16.9 12 21 12 21z" fill="url(#thumbGrad)"/>
+          <ellipse cx="9" cy="8.3" rx="2.1" ry="1.2" fill="rgba(255,255,255,0.55)"/>
+        </svg>
+        <div class="letter-scroll" id="letter-scroll">
+          <div class="letter-body" id="letter-body"></div>
+        </div>
+      </div>
+      <div class="heart-divider" id="heart-divider"></div>
+      <div class="letter-actions">
+        <button class="btn pill-outline" id="btn-to-playlist">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 21s-6.2-4.1-8.7-7.8C1.6 10.9 1.7 8.6 3 6.9 4.3 5.2 6.7 4.8 8.6 6c1 .6 1.8 1.5 2.4 2.4.4.6 1.1.6 1.5 0 .6-.9 1.4-1.8 2.4-2.4 1.9-1.2 4.3-.8 5.6.9 1.3 1.7 1.4 4-1.1 6.3C18.2 16.9 12 21 12 21z"/></svg>
+          Heart
+        </button>
+        <button class="btn pill-outline" id="btn-to-gallery-from-letter">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="8.5" cy="10" r="1.6" fill="currentColor" stroke="none"/><path d="M4 17l5-4.5 3 2.5 4-3.5 4 3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Us
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- REVEAL: playlist -->
+  <section id="screen-playlist" class="screen">
+    <div class="player-card fade-in">
+      <div class="vinyl" id="vinyl"></div>
+      <div class="track-title">Our Song</div>
+      <div class="track-sub">backsound.mp3</div>
+      <div class="player-controls">
+        <button class="play-btn" id="btn-play">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path id="play-icon" d="M8 5v14l12-7z"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="back-row">
+      <button class="btn ghost" id="btn-playlist-back">Back</button>
+    </div>
+  </section>
+
+  <!-- REVEAL: gallery -->
+  <section id="screen-gallery" class="screen">
+    <div class="photo-bg" id="photo-bg" aria-hidden="true"></div>
+    <div class="gallery-title fade-in">A Few Of Our Memories</div>
+    <div class="gallery-sub fade-in">tap the photo for more</div>
+    <div class="photo-card fade-in" id="photo-card">
+      <svg class="photo-pin" viewBox="0 0 24 24">
+        <defs>
+          <linearGradient id="pinGrad" x1="0" y1="0" x2="0.9" y2="1">
+            <stop offset="0%" stop-color="var(--rose)"/>
+            <stop offset="100%" stop-color="var(--rose-deep)"/>
+          </linearGradient>
+        </defs>
+        <circle cx="12" cy="11" r="9" fill="url(#pinGrad)"/>
+        <path d="M12 15.2s-3.6-2.4-5.1-4.5C6.1 9.4 6.2 8.1 7 7.1c.8-1 2.2-1.2 3.3-.5.5.3 1 .8 1.4 1.4.2.3.6.3.8 0 .4-.6.9-1.1 1.4-1.4 1.1-.7 2.5-.5 3.3.5.8 1 .9 2.3-.6 4.1C15.6 12.8 12 15.2 12 15.2z" fill="rgba(255,255,255,0.85)"/>
+      </svg>
+      <div class="photo-frame">
+        <img id="cycle-photo" src="images/foto1.jpg" alt="us">
+      </div>
+      <div class="photo-caption">swap in your own photo :)</div>
+      <div class="photo-dots" id="photo-dots"></div>
+    </div>
+    <div class="photo-hint">tap the photo to see the next one</div>
+    <div class="gallery-actions">
+      <button class="btn ghost" id="btn-gallery-back">Back</button>
+      <button class="btn" id="btn-to-closing">Next</button>
+    </div>
+  </section>
+
+  <!-- REVEAL: closing -->
+  <section id="screen-closing" class="screen">
+    <svg class="closing-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-6.2-4.1-8.7-7.8C1.6 10.9 1.7 8.6 3 6.9 4.3 5.2 6.7 4.8 8.6 6c1 .6 1.8 1.5 2.4 2.4.4.6 1.1.6 1.5 0 .6-.9 1.4-1.8 2.4-2.4 1.9-1.2 4.3-.8 5.6.9 1.3 1.7 1.4 4-1.1 6.3C18.2 16.9 12 21 12 21z"/></svg>
+    <div class="closing-title fade-in">Thanks For Playing!</div>
+    <p class="closing-text fade-in">However small this is, I hope it makes your day a little warmer. Thank you for being a reason I smile every day.</p>
+    <button class="btn ghost" id="btn-replay">Play Again</button>
+  </section>
+
+  <div class="floating-hearts" id="floating-hearts"></div>
+  <div class="screen-flash" id="screen-flash"></div>
+  <audio id="backsound" src="backsound.mp3" loop preload="none"></audio>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const IMAGES = ["images/gambar1.jpg", "images/gambar2.jpg"];
+  const PHOTOS = [
+    "images/foto1.jpg",
+    "images/foto2.jpg",
+    "images/foto3.jpg",
+    "images/foto4.jpg"
+  ];
+  const LETTER_TEXT = "For Keonho,\n\nThank you for playing this all the way through. I made this just so I would have a reason to send you something sweet today.\n\nEvery little thing we go through together means so much to me, even the ones that seem ordinary. I love having you to talk to, laugh with, and play silly games like this with.\n\nWhatever you are feeling while reading this, I hope it makes you a little happier than before.\n\nWith love,\nCanora";
+
+  const HEART_PATH = "M12 21s-6.2-4.1-8.7-7.8C1.6 10.9 1.7 8.6 3 6.9 4.3 5.2 6.7 4.8 8.6 6c1 .6 1.8 1.5 2.4 2.4.4.6 1.1.6 1.5 0 .6-.9 1.4-1.8 2.4-2.4 1.9-1.2 4.3-.8 5.6.9 1.3 1.7 1.4 4-1.1 6.3C18.2 16.9 12 21 12 21z";
+  const SPARKLE_PATH = "M12 2l2 6 6 2-6 2-2 6-2-6-6-2 6-2z";
+  function svgHeart(extra){ return '<svg viewBox="0 0 24 24" fill="currentColor" '+(extra||'')+'><path d="'+HEART_PATH+'"/></svg>'; }
+  function svgHeartOutline(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="'+HEART_PATH+'"/></svg>'; }
+  function svgSparkle(){ return '<svg viewBox="0 0 24 24" fill="currentColor"><path d="'+SPARKLE_PATH+'"/></svg>'; }
+  function svgBunnySmall(){
+    return '<svg viewBox="0 0 100 100" fill="currentColor"><path d="M35 45 C28 30, 25 10, 33 4 C38 0, 42 8, 40 22 C39 30, 38 38, 38 45 Z"/><path d="M65 45 C72 30, 75 10, 67 4 C62 0, 58 8, 60 22 C61 30, 62 38, 62 45 Z"/><circle cx="50" cy="58" r="30"/></svg>';
+  }
+
+  const CONFIG = {
+    totalTime: 60,
+    startSpawnInterval: 1300,
+    endSpawnInterval: 620,
+    startShowDuration: 1250,
+    endShowDuration: 520,
+    skullChance: 0.22,
+    maxLives: 3,
+  };
+
+  let score = 0, lives = CONFIG.maxLives, timeLeft = CONFIG.totalTime;
+  let hitCount = 0, running = false, elapsedMs = 0;
+  let countdownId = null, spawnTimeoutId = null;
+  const holeBusy = new Array(6).fill(false);
+
+  function $(id){ return document.getElementById(id); }
+  function showScreen(id){
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    $(id).classList.add("active");
+  }
+
+  /* ---------- sound effects (Web Audio, no files needed) ---------- */
+  let actx = null;
+  function ctx(){
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === "suspended") actx.resume();
+    return actx;
+  }
+  function tone(freq, dur, type, vol, delay){
+    try{
+      const c = ctx();
+      const osc = c.createOscillator();
+      const gain = c.createGain();
+      osc.type = type || "sine";
+      osc.frequency.value = freq;
+      const t0 = c.currentTime + (delay||0);
+      gain.gain.setValueAtTime(0, t0);
+      gain.gain.linearRampToValueAtTime(vol||0.2, t0+0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+      osc.connect(gain).connect(c.destination);
+      osc.start(t0);
+      osc.stop(t0+dur+0.02);
+    }catch(e){}
+  }
+  function sfxHit(){ tone(880,0.09,"triangle",0.18); tone(1320,0.12,"triangle",0.12,0.03); }
+  function sfxBad(){ tone(160,0.22,"sawtooth",0.16); tone(110,0.28,"sawtooth",0.12,0.05); }
+  function sfxTap(){ tone(500,0.05,"square",0.05); }
+  function sfxWin(){ tone(660,0.12,"triangle",0.15); tone(880,0.14,"triangle",0.15,0.1); tone(1100,0.18,"triangle",0.15,0.2); }
+
+  /* ---------- build holes ---------- */
+  const holesGrid = $("holes-grid");
+  for (let i=0;i<6;i++){
+    const hole = document.createElement("div");
+    hole.className = "hole";
+    hole.dataset.index = i;
+    hole.innerHTML = '<div class="mound"></div><div class="slot"></div>';
+    holesGrid.appendChild(hole);
+  }
+  const board = $("board");
+  const decoSpots = [[4,6,'',svgSparkle()],[92,8,'gold',svgSparkle()],[8,90,'',svgHeart()],[90,92,'gold',svgSparkle()],[50,3,'',svgHeart()]];
+  decoSpots.forEach((p)=>{
+    const f = document.createElement("div");
+    f.className = "deco"+(p[2]?" "+p[2]:"");
+    f.style.left = p[0]+"%";
+    f.style.top = p[1]+"%";
+    f.innerHTML = p[3];
+    board.appendChild(f);
+  });
+
+  /* ---------- hammer cursor ---------- */
+  const hammer = $("hammer");
+  function moveHammer(x,y){
+    hammer.style.setProperty("--hx", (x-8)+"px");
+    hammer.style.setProperty("--hy", (y-8)+"px");
+    hammer.style.transform = "translate("+(x-8)+"px,"+(y-8)+"px) rotate(-18deg)";
+  }
+  board.addEventListener("pointermove", (e)=>{
+    const r = board.getBoundingClientRect();
+    moveHammer(e.clientX - r.left, e.clientY - r.top);
+  });
+  board.addEventListener("pointerdown", (e)=>{
+    const r = board.getBoundingClientRect();
+    moveHammer(e.clientX - r.left, e.clientY - r.top);
+    hammer.classList.remove("swing"); void hammer.offsetWidth; hammer.classList.add("swing");
+    sfxTap();
+  });
+  board.addEventListener("pointerleave", ()=>{
+    hammer.style.transform = "translate(-9999px,-9999px)";
+  });
+
+  /* ---------- HUD ---------- */
+  function updateHud(){
+    $("hud-score").textContent = score;
+    $("hud-time").textContent = Math.max(0, Math.ceil(timeLeft));
+    let hearts = "";
+    for (let i=0;i<CONFIG.maxLives;i++){
+      hearts += i < lives ? svgHeart() : svgHeartOutline().replace('stroke-width="1.6"','stroke-width="1.6" class="lost"');
+    }
+    $("hud-lives").innerHTML = hearts;
+    $("timerbar").style.width = (Math.max(timeLeft,0)/CONFIG.totalTime*100)+"%";
+  }
+
+  function lerp(a,b,t){ return a + (b-a)*t; }
+  function currentSpawnInterval(){
+    const t = Math.min(elapsedMs / (CONFIG.totalTime*1000), 1);
+    return lerp(CONFIG.startSpawnInterval, CONFIG.endSpawnInterval, t);
+  }
+  function currentShowDuration(){
+    const t = Math.min(elapsedMs / (CONFIG.totalTime*1000), 1);
+    return lerp(CONFIG.startShowDuration, CONFIG.endShowDuration, t);
+  }
+  function freeHoleIndex(){
+    const free = [];
+    holeBusy.forEach((b,i)=>{ if(!b) free.push(i); });
+    if (free.length===0) return -1;
+    return free[Math.floor(Math.random()*free.length)];
+  }
+  function pointsForHit(){
+    return 10 + Math.floor(hitCount/5)*5;
+  }
+
+  function spawnPop(holeEl, holeIndex){
+    const isSkull = Math.random() < CONFIG.skullChance;
+    const wrap = document.createElement("div");
+    wrap.className = "target-wrap" + (isSkull ? " skull" : "");
+    if (isSkull){
+      wrap.innerHTML = '<span>\u{1F480}</span>';
+    } else {
+      const src = IMAGES[Math.floor(Math.random()*IMAGES.length)];
+      wrap.innerHTML = '<img src="'+src+'" alt="catch me">';
+    }
+    holeEl.appendChild(wrap);
+    requestAnimationFrame(()=> requestAnimationFrame(()=> wrap.classList.add("show")));
+
+    let resolved = false;
+    const showDur = currentShowDuration();
+    const hideTimer = setTimeout(()=> resolveHole(false), showDur);
+
+    function resolveHole(wasHit){
+      if (resolved) return;
+      resolved = true;
+      clearTimeout(hideTimer);
+      if (wasHit && isSkull){
+        // tapping the skull is BAD now
+        wrap.classList.add("bad-hit");
+        sfxBad();
+        $("screen-flash").classList.remove("go"); void $("screen-flash").offsetWidth; $("screen-flash").classList.add("go");
+        const pop = document.createElement("div");
+        pop.className = "popscore bad";
+        pop.textContent = "-1 life";
+        holeEl.appendChild(pop);
+        requestAnimationFrame(()=> pop.classList.add("go"));
+        setTimeout(()=> pop.remove(), 700);
+        lives--;
+        updateHud();
+        setTimeout(()=>{ wrap.remove(); holeBusy[holeIndex]=false; }, 240);
+        if (lives<=0){ endGame("lives"); }
+      } else if (wasHit && !isSkull){
+        wrap.classList.add("hit");
+        sfxHit();
+        const pts = pointsForHit();
+        hitCount++;
+        score += pts;
+        const pop = document.createElement("div");
+        pop.className = "popscore";
+        pop.textContent = "+"+pts;
+        holeEl.appendChild(pop);
+        requestAnimationFrame(()=> pop.classList.add("go"));
+        setTimeout(()=> pop.remove(), 700);
+        setTimeout(()=>{ wrap.remove(); holeBusy[holeIndex]=false; }, 220);
+      } else {
+        // expired without being tapped: safe for skull, no penalty for rabbits
+        wrap.classList.remove("show");
+        setTimeout(()=>{ wrap.remove(); holeBusy[holeIndex]=false; }, 200);
+      }
+      updateHud();
+    }
+
+    wrap.addEventListener("pointerdown", (ev)=>{
+      ev.stopPropagation();
+      resolveHole(true);
+    });
+  }
+
+  function spawnLoop(){
+    if (!running) return;
+    const idx = freeHoleIndex();
+    if (idx !== -1){
+      holeBusy[idx] = true;
+      const holeEl = holesGrid.children[idx];
+      spawnPop(holeEl, idx);
+    }
+    spawnTimeoutId = setTimeout(spawnLoop, currentSpawnInterval());
+  }
+
+  function tick(){
+    if (!running) return;
+    elapsedMs += 200;
+    timeLeft -= 0.2;
+    updateHud();
+    if (timeLeft <= 0){ endGame("time"); return; }
+    countdownId = setTimeout(tick, 200);
+  }
+
+  function startGame(){
+    ctx();
+    score=0; lives=CONFIG.maxLives; timeLeft=CONFIG.totalTime; hitCount=0; elapsedMs=0; running=true;
+    holeBusy.fill(false);
+    document.querySelectorAll(".target-wrap").forEach(w=>w.remove());
+    updateHud();
+    showScreen("screen-game");
+    clearTimeout(countdownId); clearTimeout(spawnTimeoutId);
+    countdownId = setTimeout(tick, 200);
+    spawnTimeoutId = setTimeout(spawnLoop, 500);
+  }
+
+  function endGame(reason){
+    running = false;
+    clearTimeout(countdownId); clearTimeout(spawnTimeoutId);
+    $("final-score").textContent = score;
+    let msg;
+    if (score >= 300) msg = "Lightning reflexes! Really impressive.";
+    else if (score >= 150) msg = "Pretty solid score there!";
+    else msg = "Win or lose, there is still a surprise waiting for you.";
+    $("final-msg").textContent = msg;
+    showScreen("screen-result");
+    sfxWin();
+  }
+
+  $("btn-start").addEventListener("click", startGame);
+  $("btn-see-surprise").addEventListener("click", ()=> showScreen("screen-reveal-envelope"));
+
+  /* ---------- envelope open ---------- */
+  const envelope = $("envelope");
+  $("envelope-wrap").addEventListener("click", ()=>{
+    if (envelope.classList.contains("open")) return;
+    envelope.classList.add("open");
+    spawnHearts(10);
+    setTimeout(()=>{
+      showScreen("screen-letter");
+      typeLetter();
+    }, 650);
+  });
+
+  /* ---------- letter: heart divider deco ---------- */
+  (function(){
+    const host = $("heart-divider");
+    for (let i=0;i<9;i++){ host.innerHTML += svgHeart(); }
+  })();
+
+  /* ---------- typewriter letter + heart scrollbar ---------- */
+  let typingDone = false;
+  function typeLetter(){
+    const el = $("letter-body");
+    const scrollBox = $("letter-scroll");
+    el.textContent = "";
+    scrollBox.scrollTop = 0;
+    typingDone = false;
+    const cursor = document.createElement("span");
+    cursor.className = "cursor";
+    cursor.textContent = "\u00A0";
+    let i = 0;
+    const speed = 16;
+    function step(){
+      if (i <= LETTER_TEXT.length){
+        el.textContent = LETTER_TEXT.slice(0,i);
+        el.appendChild(cursor);
+        i++;
+        scrollBox.scrollTop = scrollBox.scrollHeight;
+        updateThumb();
+        setTimeout(step, speed);
+      } else {
+        cursor.remove();
+        typingDone = true;
+      }
+    }
+    step();
+  }
+
+  const scrollBox = $("letter-scroll");
+  const thumb = $("scroll-thumb");
+  const rail = document.querySelector(".scroll-rail");
+  function updateThumb(){
+    const railH = rail.offsetHeight;
+    const thumbH = thumb.offsetHeight || 22;
+    const max = scrollBox.scrollHeight - scrollBox.clientHeight;
+    const ratio = max > 0 ? scrollBox.scrollTop / max : 0;
+    const top = ratio * Math.max(railH - thumbH, 0);
+    thumb.style.top = top + "px";
+  }
+  scrollBox.addEventListener("scroll", updateThumb);
+  window.addEventListener("resize", updateThumb);
+
+  let draggingThumb = false;
+  thumb.addEventListener("pointerdown", (e)=>{
+    draggingThumb = true;
+    thumb.setPointerCapture(e.pointerId);
+  });
+  thumb.addEventListener("pointermove", (e)=>{
+    if (!draggingThumb) return;
+    const railRect = rail.getBoundingClientRect();
+    const thumbH = thumb.offsetHeight || 22;
+    let rel = (e.clientY - railRect.top - thumbH/2) / Math.max(railRect.height - thumbH, 1);
+    rel = Math.min(Math.max(rel,0),1);
+    const max = scrollBox.scrollHeight - scrollBox.clientHeight;
+    scrollBox.scrollTop = rel * max;
+    updateThumb();
+  });
+  thumb.addEventListener("pointerup", ()=>{ draggingThumb=false; });
+  thumb.addEventListener("pointercancel", ()=>{ draggingThumb=false; });
+
+  $("icon-envelope").addEventListener("click", typeLetter);
+  $("icon-person").addEventListener("click", ()=>{
+    document.querySelector(".letter-card").animate(
+      [{transform:"rotate(0deg)"},{transform:"rotate(-1.2deg)"},{transform:"rotate(1.2deg)"},{transform:"rotate(0deg)"}],
+      {duration:320, easing:"ease-in-out"}
+    );
+    spawnHearts(4);
+  });
+  $("icon-close").addEventListener("click", ()=> showScreen("screen-start"));
+
+  $("btn-to-playlist").addEventListener("click", ()=> showScreen("screen-playlist"));
+  /* ---------- gallery: tap-to-cycle photo + background pattern ---------- */
+  let photoIndex = 0;
+  function renderPhotoDots(){
+    const host = $("photo-dots");
+    host.innerHTML = PHOTOS.map((_,i)=> '<span class="photo-dot'+(i===photoIndex?" active":"")+'"></span>').join("");
+  }
+  function cyclePhoto(){
+    const img = $("cycle-photo");
+    img.style.opacity = 0;
+    img.style.transform = "scale(.96)";
+    setTimeout(()=>{
+      photoIndex = (photoIndex+1) % PHOTOS.length;
+      img.src = PHOTOS[photoIndex];
+      img.style.opacity = 1;
+      img.style.transform = "scale(1)";
+      renderPhotoDots();
+    }, 190);
+  }
+  $("photo-card").addEventListener("click", cyclePhoto);
+  renderPhotoDots();
+
+  let photoBgBuilt = false;
+  function buildPhotoBg(){
+    if (photoBgBuilt) return;
+    photoBgBuilt = true;
+    const host = $("photo-bg");
+    for (let i=0;i<14;i++){
+      const row = document.createElement("div");
+      row.className = "photo-bg-row";
+      row.textContent = "love you  ".repeat(9);
+      host.appendChild(row);
+    }
+  }
+
+  $("btn-to-gallery-from-letter").addEventListener("click", ()=> showScreen("screen-gallery"));
+  buildPhotoBg();
+  $("btn-gallery-back").addEventListener("click", ()=> showScreen("screen-letter"));
+  $("btn-playlist-back").addEventListener("click", ()=> showScreen("screen-letter"));
+  $("btn-to-closing").addEventListener("click", ()=>{ showScreen("screen-closing"); spawnHearts(16); });
+  $("btn-replay").addEventListener("click", ()=> showScreen("screen-start"));
+
+  /* ---------- playlist audio ---------- */
+  const audioEl = $("backsound");
+  const vinyl = $("vinyl");
+  const playIcon = $("play-icon");
+  let isPlaying = false;
+  const PATH_PLAY = "M8 5v14l12-7z";
+  const PATH_PAUSE = "M7 5h4v14H7zM13 5h4v14h-4z";
+  $("btn-play").addEventListener("click", ()=>{
+    if (!isPlaying){
+      audioEl.play().catch(()=>{});
+      vinyl.classList.add("spin");
+      playIcon.setAttribute("d", PATH_PAUSE);
+      isPlaying = true;
+    } else {
+      audioEl.pause();
+      vinyl.classList.remove("spin");
+      playIcon.setAttribute("d", PATH_PLAY);
+      isPlaying = false;
+    }
+  });
+
+  /* ---------- floating hearts / sparkles fx ---------- */
+  function spawnHearts(n){
+    const host = $("floating-hearts");
+    const svgs = [svgHeart(), svgSparkle(), svgBunnySmall(), svgHeart()];
+    for (let i=0;i<n;i++){
+      const h = document.createElement("div");
+      h.className = "fh";
+      const size = 14 + Math.random()*10;
+      h.style.width = size+"px";
+      h.style.height = size+"px";
+      h.innerHTML = svgs[Math.floor(Math.random()*svgs.length)];
+      h.style.left = Math.random()*100+"%";
+      h.style.setProperty("--drift", (Math.random()*80-40)+"px");
+      const dur = 3+Math.random()*2.5;
+      h.style.animationDuration = dur+"s";
+      host.appendChild(h);
+      setTimeout(()=> h.remove(), dur*1000+200);
+    }
+  }
+
+  updateHud();
+})();
+</script>
+</body>
+</html>
